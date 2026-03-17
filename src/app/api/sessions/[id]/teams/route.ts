@@ -1,0 +1,40 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const includeInactive = searchParams.get('includeInactive') || 'false';
+    
+    const response = await fetch(
+      `${API_BASE_URL}/teams/${params.id}/teams?includeInactive=${includeInactive}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': request.headers.get('authorization') || '',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: 'Failed to fetch teams' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Teams API error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+} 

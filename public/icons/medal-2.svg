@@ -1,0 +1,21 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M14 22C18.4183 22 22 18.4183 22 14C22 9.58172 18.4183 6 14 6C9.58172 6 6 9.58172 6 14C6 18.4183 9.58172 22 14 22Z" fill="url(#silver-medal)" />
+  <path d="M10 3H18L20 14H8L10 3Z" fill="url(#silver-ribbon)" />
+  <path d="M14 17C15.6569 17 17 15.6569 17 14C17 12.3431 15.6569 11 14 11C12.3431 11 11 12.3431 11 14C11 15.6569 12.3431 17 14 17Z" fill="white" />
+  <defs>
+    <linearGradient id="silver-medal" x1="6" y1="6" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#83838A" />
+      <stop offset="0.21" stop-color="#B8B8B8" />
+      <stop offset="0.38" stop-color="#6C6C6C" />
+      <stop offset="0.55" stop-color="#8C8C8C" />
+      <stop offset="0.68" stop-color="#B6B6B6" />
+      <stop offset="0.81" stop-color="#8E8E8E" />
+      <stop offset="1" stop-color="#474747" />
+    </linearGradient>
+    <linearGradient id="silver-ribbon" x1="8" y1="3" x2="20" y2="14" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#83838A" />
+      <stop offset="0.5" stop-color="#B8B8B8" />
+      <stop offset="1" stop-color="#474747" />
+    </linearGradient>
+  </defs>
+</svg> 

@@ -1,0 +1,450 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 27%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Refined Primary color: Teal */
+    --primary: 175 77% 37%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 25% 40%;
+
+    --accent: 175 77% 95%;
+    --accent-foreground: 175 77% 30%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 175 77% 37%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 25% 27%;
+    --sidebar-primary: 175 77% 37%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 175 77% 95%;
+    --sidebar-accent-foreground: 175 77% 30%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 175 77% 37%;
+
+    /* Updated chart colors for teal theme */
+    --chart-1: 175 77% 37%;
+    --chart-2: 187 75% 45%;
+    --chart-3: 199 89% 48%;
+    --chart-4: 162 73% 46%;
+    --chart-5: 152 76% 40%;
+  }
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 215 28% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 175 77% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 70%;
+
+    --accent: 175 77% 25%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 175 77% 42%;
+
+    --sidebar-background: 215 28% 10%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 175 77% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 175 77% 42%;
+
+    /* Updated chart colors for dark mode */
+    --chart-1: 175 77% 42%;
+    --chart-2: 187 75% 45%;
+    --chart-3: 199 89% 55%;
+    --chart-4: 162 73% 46%;
+    --chart-5: 152 76% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Light mode gradient */
+.auth-gradient-light {
+  @apply transition-all duration-300 ease-in-out will-change-[background];
+  background: linear-gradient(
+    to bottom right,
+    #0fb6b6 4.4%,
+    #0d9e9e 44.77%,
+    #0a8585 63.1%,
+    #076e6e 94.4%
+  );
+}
+
+/* Dark mode gradient */
+.auth-gradient-dark {
+  @apply transition-all duration-300 ease-in-out will-change-[background];
+  background: linear-gradient(
+    to bottom right,
+    #0fb6b6 1.6%,
+    #0d9e9e 23.83%,
+    #0a8585 63.1%,
+    #076e6e 100%
+  );
+}
+
+/* Enhanced card styles */
+.enhanced-card {
+  @apply border border-border/50 dark:border-border/30 shadow-sm hover:shadow-md transition-all duration-300 hover:border-primary/50 bg-card dark:bg-card;
+}
+
+/* Professional session card */
+.session-card {
+  @apply overflow-hidden border border-border/50 dark:border-border/30 hover:border-primary transition-all duration-300 hover:shadow-lg bg-card dark:bg-card;
+}
+
+/* Session card status indicators */
+.status-indicator {
+  @apply h-2 w-full;
+}
+
+.status-indicator-live {
+  @apply bg-gradient-to-r from-green-400 to-green-600;
+}
+
+.status-indicator-upcoming {
+  @apply bg-gradient-to-r from-primary/80 to-primary;
+}
+
+.status-indicator-completed {
+  @apply bg-gradient-to-r from-gray-300 to-gray-400;
+}
+
+.status-indicator-cancelled {
+  @apply bg-gradient-to-r from-red-400 to-red-600;
+}
+
+/* Add these responsive utilities */
+@layer utilities {
+  .responsive-container {
+    @apply px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl mx-auto w-full;
+  }
+
+  .responsive-padding {
+    @apply px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-6 lg:px-8 lg:py-8;
+  }
+
+  /* Responsive typography */
+  .h1 {
+    @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold;
+  }
+
+  .h2 {
+    @apply text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold;
+  }
+
+  .h3 {
+    @apply text-base sm:text-lg md:text-xl lg:text-2xl font-semibold;
+  }
+
+  /* Mobile-first responsive utilities */
+  .mobile-safe-area {
+    @apply px-3 py-3 sm:px-4 sm:py-4;
+  }
+
+  .mobile-text {
+    @apply text-sm sm:text-base;
+  }
+
+  .mobile-button {
+    @apply h-9 w-9 sm:h-10 sm:w-10;
+  }
+
+  .mobile-spacing {
+    @apply space-y-3 sm:space-y-4 md:space-y-6;
+  }
+
+  /* Touch-friendly interactive elements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
+  /* Mobile navigation improvements */
+  .mobile-nav-item {
+    @apply py-3 px-4 text-base font-medium;
+  }
+
+  /* Responsive grid utilities */
+  .responsive-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6;
+  }
+
+  .responsive-grid-2 {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6;
+  }
+
+  /* Dashboard icon styling to ensure it's dark enough */
+  .dashboard-icon-inactive {
+    filter: brightness(0.4) contrast(1.8) saturate(1.5) hue-rotate(0deg);
+  }
+
+  .dashboard-icon-active {
+    filter: brightness(2) contrast(1.1);
+  }
+
+  /* Perfect circular avatar styling */
+  .avatar-circle {
+    @apply rounded-full aspect-square flex items-center justify-center;
+    border-radius: 50% !important;
+  }
+
+  .avatar-text {
+    @apply font-medium leading-none text-center;
+  }
+
+  /* Responsive tabs styling */
+  .responsive-tabs {
+    @apply w-full overflow-x-auto;
+  }
+
+  .responsive-tabs-list {
+    @apply grid gap-1 h-auto p-1 bg-gray-100 rounded-xl;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  }
+
+  .responsive-tabs-list-2 {
+    @apply grid grid-cols-2 gap-1 h-auto p-1;
+  }
+
+  .responsive-tabs-list-3 {
+    @apply grid grid-cols-2 sm:grid-cols-3 gap-1 h-auto p-1;
+  }
+
+  .responsive-tabs-list-6 {
+    @apply grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1;
+  }
+
+  .responsive-tab-trigger {
+    @apply text-xs sm:text-sm px-2 py-2 sm:px-3 rounded-lg transition-all duration-300 min-h-[36px] flex items-center justify-center;
+  }
+
+  /* Enhanced dark mode dashboard styling */
+  .dashboard-card {
+    @apply bg-card dark:bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300;
+  }
+
+  .dashboard-header {
+    @apply bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 dark:from-primary/20 dark:via-primary/10 dark:to-accent/20 border border-primary/20 dark:border-primary/30 shadow-lg dark:shadow-primary/10;
+  }
+
+  .dashboard-action-button {
+    @apply bg-primary/10 dark:bg-primary/20 hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors duration-300 rounded-lg;
+  }
+
+  .dashboard-text-muted {
+    @apply text-muted-foreground;
+  }
+
+  .dashboard-text-primary {
+    @apply text-primary;
+  }
+
+  /* Enhanced sidebar styling */
+  .sidebar-header {
+    @apply p-6 border-b border-border/30 bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10;
+  }
+
+  .sidebar-logo {
+    @apply bg-gradient-to-br from-primary to-primary/80 p-2.5 rounded-xl shadow-lg;
+  }
+
+  .sidebar-title {
+    @apply text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent;
+  }
+
+  .sidebar-section-header {
+    @apply group flex items-center gap-3 text-foreground font-semibold cursor-pointer rounded-xl px-4 py-3 transition-all duration-300 text-sm border shadow-sm;
+  }
+
+  .sidebar-menu-item {
+    @apply rounded-lg transition-all duration-300 my-1 hover:shadow-md;
+  }
+
+  .sidebar-menu-item-active {
+    @apply bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg border border-primary/50;
+  }
+
+  .sidebar-menu-item-inactive {
+    @apply hover:bg-muted/50 dark:hover:bg-slate-700/50 text-foreground/70 hover:text-foreground bg-muted/10 dark:bg-slate-800/10 border border-border/20 hover:border-primary/30;
+  }
+
+  .sidebar-icon-container {
+    @apply p-1.5 rounded-md transition-all duration-300;
+  }
+
+  .sidebar-icon-container-active {
+    @apply bg-white/20 shadow-sm;
+  }
+
+  .sidebar-icon-container-inactive {
+    @apply bg-primary/10 dark:bg-primary/20;
+  }
+
+  /* Mobile sidebar dark mode fixes */
+  [data-mobile="true"] {
+    @apply bg-gradient-to-b from-background via-background/95 to-background/90 dark:from-slate-900 dark:via-slate-900/95 dark:to-slate-800/90 !important;
+  }
+
+  [data-mobile="true"] * {
+    @apply text-foreground dark:text-foreground !important;
+  }
+
+  /* Ensure sheet content respects dark mode */
+  .dark [data-mobile="true"] {
+    background: linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 50%, hsl(var(--background) / 0.9) 100%) !important;
+  }
+
+  /* Force dark mode colors for mobile sidebar */
+  .dark [data-sidebar="sidebar"][data-mobile="true"] {
+    background: linear-gradient(to bottom, rgb(15 23 42) 0%, rgb(15 23 42 / 0.95) 50%, rgb(30 41 59 / 0.9) 100%) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Enhanced session card styling */
+  .session-card {
+    @apply bg-card dark:bg-card border border-border/50 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden;
+  }
+
+  .session-card:hover {
+    @apply border-primary/30 shadow-lg dark:shadow-primary/10;
+  }
+
+  /* Status indicators for session cards */
+  .status-indicator {
+    @apply h-2 w-full;
+  }
+
+  .status-indicator-live {
+    @apply bg-gradient-to-r from-green-500 to-green-600;
+  }
+
+  .status-indicator-upcoming {
+    @apply bg-gradient-to-r from-primary to-primary/80;
+  }
+
+  .status-indicator-completed {
+    @apply bg-gradient-to-r from-muted-foreground/60 to-muted-foreground/40;
+  }
+
+  .status-indicator-cancelled {
+    @apply bg-gradient-to-r from-destructive to-destructive/80;
+  }
+
+  /* Enhanced card styling */
+  .enhanced-card {
+    @apply bg-card dark:bg-card border border-border/50 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl;
+  }
+
+  .enhanced-card:hover {
+    @apply border-primary/30 shadow-lg dark:shadow-primary/10;
+  }
+
+  /* Beautiful shimmer animation for skeletons */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Enhanced dashboard animations */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(20, 200, 200, 0.1);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(20, 200, 200, 0.2);
+    }
+  }
+
+  .float-animation {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .glow-animation {
+    animation: glow 4s ease-in-out infinite;
+  }
+
+  /* Enhanced HOST badge animations */
+  @keyframes shimmer-badge {
+    0% {
+      transform: translateX(-100%) skewX(-12deg);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(200%) skewX(-12deg);
+      opacity: 0;
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer-badge 2s ease-in-out infinite;
+  }
+
+  /* Text shadow utility */
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+}

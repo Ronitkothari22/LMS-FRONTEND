@@ -1,0 +1,34 @@
+# Development Dockerfile for faster iteration
+FROM node:20-alpine3.20
+
+# Update packages to fix security vulnerabilities with retry logic and fallback mirrors
+RUN apk update --no-cache || \
+    (echo "http://dl-cdn.alpinelinux.org/alpine/v3.20/main" > /etc/apk/repositories && \
+     echo "http://dl-cdn.alpinelinux.org/alpine/v3.20/community" >> /etc/apk/repositories && \
+     apk update --no-cache) && \
+    apk upgrade --no-cache && \
+    apk add --no-cache libc6-compat
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@10.5.2 --activate
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install all dependencies (including dev dependencies)
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Set environment variables
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=development
+
+# Expose port
+EXPOSE 3000
+
+# Start development server
+CMD ["pnpm", "dev"]

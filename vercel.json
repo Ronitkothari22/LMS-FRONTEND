@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm build",
+  "devCommand": "pnpm dev",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_PUBLIC_API_BASE_URL": "https://joining-dots-backend-delta.vercel.app/api",
+    "NEXT_PUBLIC_SOCKET_URL": "wss://joining-dots-backend-delta.vercel.app",
+    "NODE_ENV": "production"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://joining-dots-backend-delta.vercel.app/api/:path*"
+    },
+    {
+      "source": "/dashboard/sessions/:id",
+      "destination": "/dashboard/sessions/[id]"
+    },
+    {
+      "source": "/dashboard/sessions/:id/quiz",
+      "destination": "/dashboard/sessions/[id]/quiz"
+    }
+  ]
+}
