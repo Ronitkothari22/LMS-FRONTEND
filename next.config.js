@@ -29,7 +29,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; connect-src 'self' http://localhost:8080 https://localhost:8080 http://api.joiningdots.co.in https://api.joiningdots.co.in ws://api.joiningdots.co.in; img-src 'self' data: https: http: blob: https://data.joiningdots.co.in; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; frame-src 'self';"
+            value: "default-src 'self'; connect-src 'self' http://localhost:8080 https://localhost:8080 http://api.joiningdots.co.in https://api.joiningdots.co.in ws://api.joiningdots.co.in; img-src 'self' data: https: http: blob: https://data.joiningdots.co.in; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://vimeo.com https://drive.google.com https://docs.google.com;"
           }
         ],
       },

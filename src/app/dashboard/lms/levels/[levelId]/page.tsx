@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, CircleAlert, Sparkles } from 'lucide-react';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useCompleteLmsLevel,
@@ -119,20 +119,6 @@ export default function LmsLevelPage() {
     }
   };
 
-  const handleCompleteLevel = async () => {
-    try {
-      const completion = await completeLevelMutation.mutateAsync({ levelId, force: false });
-
-      if (completion.nextLevelId) {
-        toast.success('Level completion processed. Next level is now unlocked.');
-      } else {
-        toast.success('Level completion processed successfully.');
-      }
-    } catch {
-      // Error toast handled in API layer
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -167,7 +153,7 @@ export default function LmsLevelPage() {
         </Link>
         <h1 className="text-2xl md:text-3xl font-bold">{level.title}</h1>
         <p className="text-muted-foreground">
-          Finish the phases in order: video first, then quiz, then level completion.
+          Finish in order: video first, then quiz. Level completion is auto-processed once rules are met.
         </p>
       </div>
 
@@ -227,6 +213,8 @@ export default function LmsLevelPage() {
             </div>
           )}
           <LmsLevelContentSection
+            levelId={levelId}
+            isLevelCompleted={isLevelCompleted}
             contents={level.contents || []}
             onVideoProgress={handleVideoProgress}
             isUpdatingVideoProgress={videoProgressMutation.isPending}
@@ -258,43 +246,6 @@ export default function LmsLevelPage() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Badge className="h-6 w-6 flex items-center justify-center rounded-full px-0">3</Badge>
-            <CheckCircle2 className="h-5 w-5 text-primary" />
-            Finalize Level Completion
-          </CardTitle>
-          <CardDescription>
-            This checks backend rules and unlocks the next level when requirements are met.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button
-            onClick={handleCompleteLevel}
-            disabled={completeLevelMutation.isPending || isLevelCompleted}
-          >
-            {isLevelCompleted
-              ? 'Level Completed'
-              : completeLevelMutation.isPending
-                ? 'Evaluating...'
-                : 'Complete Level'}
-          </Button>
-
-          {completeLevelMutation.error && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive inline-flex items-center gap-2">
-              <CircleAlert className="h-4 w-4" />
-              Completion requirements are not met yet. Please finish required content/quiz.
-            </div>
-          )}
-
-          {completeLevelMutation.data?.nextLevelId && (
-            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400">
-              Next level unlocked successfully.
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
