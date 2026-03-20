@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, CircleHelp, XCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,13 @@ interface LmsLevelQuizSectionProps {
   questions: LmsQuestion[];
   isSubmitting?: boolean;
   result?: LmsLevelAttemptResult | null;
+  readOnly?: boolean;
+  initialAnswers?: Array<{
+    questionId: string;
+    selectedOptionIds: string[];
+    textAnswer?: string | null;
+    isCorrect?: boolean | null;
+  }>;
   onSubmitAttempt: (payload: LmsCreateAttemptPayload) => void;
 }
 
@@ -29,6 +36,8 @@ export function LmsLevelQuizSection({
   questions,
   isSubmitting,
   result,
+  readOnly = false,
+  initialAnswers = [],
   onSubmitAttempt,
 }: LmsLevelQuizSectionProps) {
   const [answers, setAnswers] = useState<QuizAnswerState>({});
@@ -37,6 +46,19 @@ export function LmsLevelQuizSection({
     () => [...questions].sort((a, b) => a.position - b.position),
     [questions],
   );
+
+  useEffect(() => {
+    if (!initialAnswers.length) return;
+
+    const seededAnswers: QuizAnswerState = {};
+    for (const answer of initialAnswers) {
+      seededAnswers[answer.questionId] = {
+        selectedOptionIds: answer.selectedOptionIds || [],
+        textAnswer: answer.textAnswer || '',
+      };
+    }
+    setAnswers(seededAnswers);
+  }, [initialAnswers]);
 
   const setSingleChoice = (questionId: string, optionId: string) => {
     setAnswers(prev => ({
@@ -111,7 +133,9 @@ export function LmsLevelQuizSection({
       <CardHeader>
         <CardTitle>Knowledge Check</CardTitle>
         <CardDescription>
-          Answer all required questions and submit your attempt.
+          {readOnly
+            ? 'Review mode: showing your latest submitted answers.'
+            : 'Answer all required questions and submit your attempt.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -137,6 +161,7 @@ export function LmsLevelQuizSection({
                     onChange={event => setTextAnswer(question.id, event.target.value)}
                     placeholder="Type your answer"
                     rows={4}
+                    disabled={readOnly}
                   />
                 )}
 
@@ -148,7 +173,11 @@ export function LmsLevelQuizSection({
                       <button
                         key={option.id}
                         type="button"
-                        onClick={() => setSingleChoice(question.id, option.id)}
+                        onClick={() => {
+                          if (readOnly) return;
+                          setSingleChoice(question.id, option.id);
+                        }}
+                        disabled={readOnly}
                         className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
                           selected
                             ? 'border-primary bg-primary/10 text-primary'
@@ -171,6 +200,7 @@ export function LmsLevelQuizSection({
                       >
                         <Checkbox
                           checked={checked}
+                          disabled={readOnly}
                           onCheckedChange={value =>
                             toggleMultiChoice(question.id, option.id, Boolean(value))
                           }
@@ -180,6 +210,20 @@ export function LmsLevelQuizSection({
                     );
                   })}
               </div>
+
+              {readOnly && (
+                <div className="mt-3">
+                  {initialAnswers.find(answer => answer.questionId === question.id)?.isCorrect ? (
+                    <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-500/40" variant="outline">
+                      Correct
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-rose-500/10 text-rose-700 border-rose-500/40" variant="outline">
+                      Incorrect
+                    </Badge>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
@@ -207,9 +251,11 @@ export function LmsLevelQuizSection({
           </div>
         )}
 
-        <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
-          {isSubmitting ? 'Submitting Attempt...' : 'Submit Attempt'}
-        </Button>
+        {!readOnly && (
+          <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
+            {isSubmitting ? 'Submitting Attempt...' : 'Submit Attempt'}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

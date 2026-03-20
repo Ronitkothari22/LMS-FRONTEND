@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import {
   useCompleteLmsLevel,
   useLmsLevel,
+  useLmsProgress,
   useSubmitLmsLevelAttempt,
   useUpdateLmsVideoProgress,
 } from '@/hooks/lms';
@@ -24,6 +25,7 @@ export default function LmsLevelPage() {
   const levelId = params?.levelId || '';
 
   const { data: level, isLoading, isError } = useLmsLevel(levelId);
+  const { data: lmsProgress } = useLmsProgress();
   const videoProgressMutation = useUpdateLmsVideoProgress();
   const submitAttemptMutation = useSubmitLmsLevelAttempt();
   const completeLevelMutation = useCompleteLmsLevel();
@@ -38,6 +40,41 @@ export default function LmsLevelPage() {
       readings: items.filter(item => item.type === 'READING').length,
     };
   }, [level?.contents]);
+
+  const levelProgress = useMemo(
+    () =>
+      (lmsProgress?.levels || []).find(progress => progress.levelId === levelId) ||
+      level?.progress ||
+      null,
+    [lmsProgress?.levels, levelId, level?.progress],
+  );
+
+  const hasVideoContent = contentStats.videos > 0;
+  const requiredWatchPercent = level?.minVideoWatchPercent ?? 100;
+  const currentWatchPercent = Math.round(levelProgress?.watchPercent || 0);
+  const isVideoPhaseComplete =
+    !level?.requireVideoCompletion ||
+    !hasVideoContent ||
+    currentWatchPercent >= requiredWatchPercent;
+  const isQuizLocked = Boolean(level?.requireVideoCompletion) && !isVideoPhaseComplete;
+  const isLevelCompleted = levelProgress?.status === 'COMPLETED';
+
+  const latestAttemptResult = useMemo<LmsLevelAttemptResult | null>(() => {
+    if (!level?.latestAttempt) return null;
+    return {
+      attempt: {
+        id: level.latestAttempt.id,
+        status: level.latestAttempt.status,
+        scorePercent: level.latestAttempt.scorePercent ?? undefined,
+        createdAt: level.latestAttempt.submittedAt || undefined,
+      },
+      summary: {
+        passed: level.latestAttempt.status === 'PASSED',
+        scorePercent: level.latestAttempt.scorePercent ?? 0,
+        passThreshold: level.quizPassingPercent || 0,
+      },
+    };
+  }, [level?.latestAttempt, level?.quizPassingPercent]);
 
   const handleVideoProgress = async (payload: {
     contentId: string;
@@ -68,6 +105,12 @@ export default function LmsLevelPage() {
 
       if (response.summary.passed) {
         toast.success('Great work! You passed this level quiz.');
+        try {
+          await completeLevelMutation.mutateAsync({ levelId, force: false });
+          toast.success('Level marked completed and next step unlocked.');
+        } catch {
+          // Error toast handled in API layer
+        }
       } else {
         toast.error('Attempt submitted. Pass threshold not met yet.');
       }
@@ -124,7 +167,7 @@ export default function LmsLevelPage() {
         </Link>
         <h1 className="text-2xl md:text-3xl font-bold">{level.title}</h1>
         <p className="text-muted-foreground">
-          Complete content, pass quiz, and finish this level to unlock your next step.
+          Finish the phases in order: video first, then quiz, then level completion.
         </p>
       </div>
 
@@ -164,22 +207,61 @@ export default function LmsLevelPage() {
         </CardContent>
       </Card>
 
-      <LmsLevelContentSection
-        contents={level.contents || []}
-        onVideoProgress={handleVideoProgress}
-        isUpdatingVideoProgress={videoProgressMutation.isPending}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Badge className="h-6 w-6 flex items-center justify-center rounded-full px-0">1</Badge>
+            Phase 1: Video & Content
+          </CardTitle>
+          <CardDescription>
+            Watch the video content to unlock the quiz phase.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {level.requireVideoCompletion && hasVideoContent && (
+            <div className="rounded-lg border p-3">
+              <p className="text-sm font-medium">Video Progress</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Required: {requiredWatchPercent}% | Current: {currentWatchPercent}%
+              </p>
+            </div>
+          )}
+          <LmsLevelContentSection
+            contents={level.contents || []}
+            onVideoProgress={handleVideoProgress}
+            isUpdatingVideoProgress={videoProgressMutation.isPending}
+          />
+        </CardContent>
+      </Card>
 
-      <LmsLevelQuizSection
-        questions={level.questions || []}
-        isSubmitting={submitAttemptMutation.isPending}
-        result={attemptResult}
-        onSubmitAttempt={handleSubmitAttempt}
-      />
+      {!isQuizLocked && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Badge className="h-6 w-6 flex items-center justify-center rounded-full px-0">2</Badge>
+              Phase 2: Quiz
+            </CardTitle>
+            <CardDescription>
+              Quiz unlocks after completing required video watch progress.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LmsLevelQuizSection
+              questions={level.questions || []}
+              isSubmitting={submitAttemptMutation.isPending}
+              result={attemptResult || latestAttemptResult}
+              readOnly={isLevelCompleted}
+              initialAnswers={isLevelCompleted ? level.latestAttempt?.answers || [] : []}
+              onSubmitAttempt={handleSubmitAttempt}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
+            <Badge className="h-6 w-6 flex items-center justify-center rounded-full px-0">3</Badge>
             <CheckCircle2 className="h-5 w-5 text-primary" />
             Finalize Level Completion
           </CardTitle>
@@ -188,8 +270,15 @@ export default function LmsLevelPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button onClick={handleCompleteLevel} disabled={completeLevelMutation.isPending}>
-            {completeLevelMutation.isPending ? 'Evaluating...' : 'Complete Level'}
+          <Button
+            onClick={handleCompleteLevel}
+            disabled={completeLevelMutation.isPending || isLevelCompleted}
+          >
+            {isLevelCompleted
+              ? 'Level Completed'
+              : completeLevelMutation.isPending
+                ? 'Evaluating...'
+                : 'Complete Level'}
           </Button>
 
           {completeLevelMutation.error && (

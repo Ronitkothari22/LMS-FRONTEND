@@ -81,6 +81,20 @@ export interface LmsLevel {
   contents?: LmsLevelContent[];
   questions?: LmsQuestion[];
   progress?: LmsUserLevelProgress | null;
+  latestAttempt?: {
+    id: string;
+    attemptNumber?: number;
+    status: LmsAttemptStatus;
+    scorePercent?: number | null;
+    submittedAt?: string | null;
+    answers?: Array<{
+      questionId: string;
+      selectedOptionIds: string[];
+      textAnswer?: string | null;
+      isCorrect?: boolean | null;
+      pointsAwarded?: number;
+    }>;
+  } | null;
   _count?: {
     contents?: number;
     questions?: number;

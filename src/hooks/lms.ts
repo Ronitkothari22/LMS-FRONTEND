@@ -133,6 +133,7 @@ export const useCompleteLmsLevel = () => {
       queryClient.invalidateQueries({ queryKey: lmsKeys.progress() });
       queryClient.invalidateQueries({ queryKey: lmsKeys.topics() });
       queryClient.invalidateQueries({ queryKey: lmsKeys.leaderboard() });
+      queryClient.invalidateQueries({ queryKey: lmsKeys.all });
     },
   });
 };
