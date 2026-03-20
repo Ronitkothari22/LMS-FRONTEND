@@ -85,6 +85,10 @@ const nextConfig = {
         destination: apiBaseUrl + '/surveys/:path*',
       },
       {
+        source: '/api/lms/:path*',
+        destination: apiBaseUrl + '/lms/:path*',
+      },
+      {
         source: '/api/users/:path*',
         destination: apiBaseUrl + '/users/:path*',
       },

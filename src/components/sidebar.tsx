@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { Users, BarChart3 } from 'lucide-react';
+import { Users, BarChart3, Route } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ClientOnly } from '@/components/client-only';
 import { ThemeAwareLogo } from '@/components/theme-aware-logo';
@@ -129,6 +129,44 @@ function DashboardSidebarContent({ className }: SidebarProps) {
                             Sessions
                           </span>
                           {isActive('/dashboard/sessions') && (
+                            <div className="ml-auto">
+                              <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
+                            </div>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+
+                    {/* LMS */}
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive('/dashboard/lms')}
+                        className={`${
+                          isActive('/dashboard/lms')
+                            ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg border border-primary/50'
+                            : 'hover:bg-muted/50 dark:hover:bg-slate-700/50 text-foreground/80 hover:text-foreground bg-muted/20 dark:bg-slate-800/20 border border-border/30 hover:border-primary/30'
+                        } rounded-xl py-3 transition-all duration-300 hover:shadow-md`}
+                      >
+                        <Link
+                          href="/dashboard/lms"
+                          className="flex items-center gap-3 px-4"
+                        >
+                          <div
+                            className={`${isActive('/dashboard/lms') ? 'bg-white/20 shadow-sm' : 'bg-primary/10 dark:bg-primary/20'} p-2 rounded-lg transition-all duration-300`}
+                          >
+                            <Route
+                              className={`h-4 w-4 ${
+                                isActive('/dashboard/lms')
+                                  ? 'text-white'
+                                  : 'text-primary'
+                              }`}
+                            />
+                          </div>
+                          <span className="font-semibold text-sm">
+                            LMS
+                          </span>
+                          {isActive('/dashboard/lms') && (
                             <div className="ml-auto">
                               <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
                             </div>

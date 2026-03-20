@@ -447,4 +447,74 @@
   .text-shadow-sm {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
+
+  /* LMS board motion (Phase 2) */
+  @keyframes lms-node-reveal {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes lms-connector-draw {
+    0% {
+      opacity: 0;
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+    100% {
+      opacity: 1;
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+  }
+
+  @keyframes lms-node-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+    }
+  }
+
+  @keyframes lms-complete-pop {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .lms-node-reveal {
+    animation: lms-node-reveal 420ms ease-out both;
+  }
+
+  .lms-connector-draw {
+    animation: lms-connector-draw 500ms ease-out both;
+  }
+
+  .lms-node-pulse {
+    animation: lms-node-pulse 2s ease-in-out infinite;
+  }
+
+  .lms-complete-pop {
+    animation: lms-complete-pop 300ms ease-out both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lms-node-reveal,
+    .lms-connector-draw,
+    .lms-node-pulse,
+    .lms-complete-pop {
+      animation: none !important;
+    }
+  }
 }
