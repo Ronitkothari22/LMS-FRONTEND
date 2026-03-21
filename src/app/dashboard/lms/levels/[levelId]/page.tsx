@@ -50,7 +50,11 @@ export default function LmsLevelPage() {
   );
 
   const hasVideoContent = contentStats.videos > 0;
-  const requiredWatchPercent = level?.minVideoWatchPercent ?? 100;
+  const requiredWatchPercent = level?.requireVideoCompletion
+    ? (level?.minVideoWatchPercent ?? 0) > 0
+      ? level.minVideoWatchPercent || 100
+      : 100
+    : 100;
   const currentWatchPercent = Math.round(levelProgress?.watchPercent || 0);
   const isVideoPhaseComplete =
     !level?.requireVideoCompletion ||
@@ -183,7 +187,7 @@ export default function LmsLevelPage() {
 
           <div className="flex flex-wrap gap-2">
             <Badge variant={level.requireVideoCompletion ? 'default' : 'secondary'}>
-              Video: {level.requireVideoCompletion ? `Required (${level.minVideoWatchPercent || 0}%)` : 'Optional'}
+              Video: {level.requireVideoCompletion ? `Required (${requiredWatchPercent}%)` : 'Optional'}
             </Badge>
             <Badge variant={level.requireQuizPass ? 'default' : 'secondary'}>
               Quiz: {level.requireQuizPass ? `Required (${level.quizPassingPercent || 0}%)` : 'Optional'}

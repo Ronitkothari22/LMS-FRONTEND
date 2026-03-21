@@ -4,6 +4,7 @@ export type LmsVideoSourceType = 'UPLOAD' | 'EXTERNAL_LINK';
 export type LmsWatchEventType = 'START' | 'PROGRESS' | 'PAUSE' | 'SEEK' | 'COMPLETE';
 export type LmsAttemptStatus = 'IN_PROGRESS' | 'PASSED' | 'FAILED' | 'ABANDONED';
 export type LmsProgressStatus = 'LOCKED' | 'UNLOCKED' | 'IN_PROGRESS' | 'COMPLETED';
+export type LmsVisibility = 'ALL' | 'SESSION';
 
 export interface LmsApiErrorContext {
   [key: string]: unknown;
@@ -62,6 +63,8 @@ export interface LmsLevelContent {
 export interface LmsLevel {
   id: string;
   topicId: string;
+  visibility?: LmsVisibility;
+  sessionId?: string | null;
   topic?: {
     id: string;
     title: string;
@@ -106,6 +109,8 @@ export interface LmsTopic {
   title: string;
   description?: string | null;
   slug?: string | null;
+  visibility?: LmsVisibility;
+  sessionId?: string | null;
   isPublished: boolean;
   isActive?: boolean;
   position?: number | null;
