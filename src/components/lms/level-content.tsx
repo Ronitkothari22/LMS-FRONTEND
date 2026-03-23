@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { LmsLevelContent, LmsWatchEventType } from '@/types/lms';
+import { PdfJsReader } from '@/components/lms/pdfjs-reader';
 
 interface LmsLevelContentProps {
   levelId?: string;
@@ -17,6 +18,7 @@ interface LmsLevelContentProps {
     watchPercent?: number;
     watchSeconds?: number;
     videoPositionSeconds?: number;
+    contentType?: 'VIDEO' | 'READING';
   }) => void | Promise<void>;
   isUpdatingVideoProgress?: boolean;
 }
@@ -156,6 +158,43 @@ const getPlayableVideoConfig = (content: LmsLevelContent): {
   return { mode: 'iframe', url: toAbsoluteUrl(sourceUrl) };
 };
 
+const isDirectPdfUrl = (rawUrl: string): boolean => {
+  const absoluteUrl = toAbsoluteUrl(rawUrl);
+  if (!absoluteUrl) return false;
+
+  try {
+    const parsed = new URL(absoluteUrl);
+    return parsed.pathname.toLowerCase().endsWith('.pdf');
+  } catch {
+    return absoluteUrl.toLowerCase().split('?')[0].endsWith('.pdf');
+  }
+};
+
+const getReadingRenderConfig = (
+  content: LmsLevelContent,
+): { mode: 'pdfjs' | 'iframe'; url: string } | null => {
+  const sourceUrl = content.attachmentUrl || content.externalUrl || null;
+  if (!sourceUrl) return null;
+  const absoluteUrl = toAbsoluteUrl(sourceUrl);
+  if (!absoluteUrl) return null;
+
+  const driveEmbedUrl = getGoogleDriveEmbedUrl(sourceUrl);
+  if (driveEmbedUrl) {
+    return { mode: 'iframe', url: driveEmbedUrl };
+  }
+
+  if (isDirectPdfUrl(sourceUrl)) {
+    return { mode: 'pdfjs', url: absoluteUrl };
+  }
+
+  // LMS uploaded reading attachment: try PDF.js even if extension is not explicit.
+  if (content.attachmentUrl) {
+    return { mode: 'pdfjs', url: absoluteUrl };
+  }
+
+  return { mode: 'iframe', url: absoluteUrl };
+};
+
 export function LmsLevelContentSection({
   levelId,
   isLevelCompleted = false,
@@ -166,12 +205,14 @@ export function LmsLevelContentSection({
   const [startedVideoIds, setStartedVideoIds] = useState<Record<string, boolean>>({});
   const [reportedPercentByVideo, setReportedPercentByVideo] = useState<Record<string, number>>({});
   const [completedVideoIds, setCompletedVideoIds] = useState<Record<string, boolean>>({});
+  const [completedReadingIds, setCompletedReadingIds] = useState<Record<string, boolean>>({});
 
   const sortedContents = useMemo(
     () => [...contents].sort((a, b) => a.position - b.position),
     [contents],
   );
   const completedStorageKey = levelId ? `lms-video-completed:${levelId}` : null;
+  const completedReadingStorageKey = levelId ? `lms-reading-completed:${levelId}` : null;
 
   useEffect(() => {
     if (!completedStorageKey) return;
@@ -201,6 +242,59 @@ export function LmsLevelContentSection({
   }, [completedStorageKey, sortedContents]);
 
   useEffect(() => {
+    const backendCompleted: Record<string, boolean> = {};
+    for (const item of sortedContents) {
+      if (item.type === 'VIDEO' && item.isCompleted) {
+        backendCompleted[item.id] = true;
+      }
+    }
+
+    if (Object.keys(backendCompleted).length > 0) {
+      setCompletedVideoIds(prev => ({ ...backendCompleted, ...prev }));
+    }
+  }, [sortedContents]);
+
+  useEffect(() => {
+    if (!completedReadingStorageKey) return;
+
+    try {
+      const raw = window.localStorage.getItem(completedReadingStorageKey);
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw) as string[];
+      if (!Array.isArray(parsed)) return;
+
+      const validReadingIds = new Set(
+        sortedContents.filter(item => item.type === 'READING').map(item => item.id),
+      );
+
+      const restored: Record<string, boolean> = {};
+      for (const contentId of parsed) {
+        if (validReadingIds.has(contentId)) {
+          restored[contentId] = true;
+        }
+      }
+
+      setCompletedReadingIds(restored);
+    } catch {
+      // Ignore malformed local storage and continue with empty state.
+    }
+  }, [completedReadingStorageKey, sortedContents]);
+
+  useEffect(() => {
+    const backendCompleted: Record<string, boolean> = {};
+    for (const item of sortedContents) {
+      if (item.type === 'READING' && item.isCompleted) {
+        backendCompleted[item.id] = true;
+      }
+    }
+
+    if (Object.keys(backendCompleted).length > 0) {
+      setCompletedReadingIds(prev => ({ ...backendCompleted, ...prev }));
+    }
+  }, [sortedContents]);
+
+  useEffect(() => {
     if (!completedStorageKey) return;
 
     const completedIds = Object.entries(completedVideoIds)
@@ -213,6 +307,20 @@ export function LmsLevelContentSection({
       // Ignore storage failures (private mode / quota).
     }
   }, [completedStorageKey, completedVideoIds]);
+
+  useEffect(() => {
+    if (!completedReadingStorageKey) return;
+
+    const completedIds = Object.entries(completedReadingIds)
+      .filter(([, isCompleted]) => isCompleted)
+      .map(([contentId]) => contentId);
+
+    try {
+      window.localStorage.setItem(completedReadingStorageKey, JSON.stringify(completedIds));
+    } catch {
+      // Ignore storage failures (private mode / quota).
+    }
+  }, [completedReadingStorageKey, completedReadingIds]);
 
   if (!contents.length) {
     return (
@@ -237,9 +345,13 @@ export function LmsLevelContentSection({
         {sortedContents.map(content => {
           const contentUrl = content.externalUrl || content.videoUrl || content.attachmentUrl;
           const isVideo = content.type === 'VIDEO';
+          const isReading = content.type === 'READING';
           const playableVideo = isVideo ? getPlayableVideoConfig(content) : null;
+          const readingRenderConfig = isReading ? getReadingRenderConfig(content) : null;
           const videoUrl = content.videoUrl || content.externalUrl || null;
           const isVideoCompleted = isVideo && (isLevelCompleted || completedVideoIds[content.id]);
+          const isReadingCompleted =
+            isReading && (isLevelCompleted || completedReadingIds[content.id]);
 
           return (
             <div key={content.id} className="rounded-xl border p-3">
@@ -291,6 +403,7 @@ export function LmsLevelContentSection({
                         watchPercent: 0,
                         watchSeconds: 0,
                         videoPositionSeconds: 0,
+                        contentType: 'VIDEO',
                       });
                     }}
                   >
@@ -314,6 +427,7 @@ export function LmsLevelContentSection({
                         watchPercent: 100,
                         watchSeconds: content.videoDurationSeconds || 0,
                         videoPositionSeconds: content.videoDurationSeconds || 0,
+                        contentType: 'VIDEO',
                       });
                     }}
                   >
@@ -331,9 +445,26 @@ export function LmsLevelContentSection({
                 )}
 
                 {content.type === 'READING' && (
-                  <Button size="sm" variant="secondary" disabled className="gap-1">
+                  <Button
+                    size="sm"
+                    className="gap-1"
+                    variant={isReadingCompleted ? 'secondary' : 'default'}
+                    disabled={isLevelCompleted || isUpdatingVideoProgress || isReadingCompleted}
+                    onClick={() => {
+                      if (isLevelCompleted || isReadingCompleted) return;
+                      setCompletedReadingIds(prev => ({ ...prev, [content.id]: true }));
+                      onVideoProgress({
+                        contentId: content.id,
+                        eventType: 'COMPLETE',
+                        watchPercent: 100,
+                        watchSeconds: 0,
+                        videoPositionSeconds: 0,
+                        contentType: 'READING',
+                      });
+                    }}
+                  >
                     <BookOpenText className="h-3.5 w-3.5" />
-                    Reading Item
+                    {isReadingCompleted ? 'Marked as Read' : 'Mark as Read'}
                   </Button>
                 )}
               </div>
@@ -355,6 +486,7 @@ export function LmsLevelContentSection({
                           watchPercent: 0,
                           watchSeconds: 0,
                           videoPositionSeconds: 0,
+                          contentType: 'VIDEO',
                         });
                       }}
                       onTimeUpdate={event => {
@@ -382,6 +514,7 @@ export function LmsLevelContentSection({
                             watchPercent: currentPercent,
                             watchSeconds: Math.floor(element.currentTime),
                             videoPositionSeconds: Math.floor(element.currentTime),
+                            contentType: 'VIDEO',
                           });
                         }
                       }}
@@ -400,6 +533,7 @@ export function LmsLevelContentSection({
                           watchPercent: 100,
                           watchSeconds: watchedSeconds,
                           videoPositionSeconds: watchedSeconds,
+                          contentType: 'VIDEO',
                         });
                       }}
                     />
@@ -413,6 +547,20 @@ export function LmsLevelContentSection({
                         allowFullScreen
                       />
                     </div>
+                  )}
+                </div>
+              )}
+
+              {isReading && readingRenderConfig?.url && (
+                <div className="mt-4 rounded-lg border bg-muted/10 overflow-hidden">
+                  {readingRenderConfig.mode === 'pdfjs' ? (
+                    <PdfJsReader url={readingRenderConfig.url} title={content.title} />
+                  ) : (
+                    <iframe
+                      src={readingRenderConfig.url}
+                      title={`${content.title} Reading`}
+                      className="h-[520px] w-full"
+                    />
                   )}
                 </div>
               )}

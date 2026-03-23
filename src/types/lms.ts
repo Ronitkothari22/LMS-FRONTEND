@@ -58,6 +58,8 @@ export interface LmsLevelContent {
   externalUrl?: string | null;
   attachmentUrl?: string | null;
   metadata?: Record<string, unknown> | null;
+  isCompleted?: boolean;
+  completionPercent?: number;
 }
 
 export interface LmsLevel {
@@ -98,6 +100,21 @@ export interface LmsLevel {
       pointsAwarded?: number;
     }>;
   } | null;
+  completionRules?: {
+    videoPassed: boolean;
+    readingPassed: boolean;
+    contentPassed: boolean;
+    quizPassed: boolean;
+    canComplete: boolean;
+    reasons?: {
+      currentWatchPercent?: number;
+      currentContentGatePercent?: number;
+      requiredVideos?: number;
+      completedRequiredVideos?: number;
+      requiredReadings?: number;
+      completedRequiredReadings?: number;
+    };
+  };
   _count?: {
     contents?: number;
     questions?: number;

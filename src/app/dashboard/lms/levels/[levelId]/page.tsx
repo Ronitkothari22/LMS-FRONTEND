@@ -56,11 +56,11 @@ export default function LmsLevelPage() {
       : 100
     : 100;
   const currentWatchPercent = Math.round(levelProgress?.watchPercent || 0);
-  const isVideoPhaseComplete =
-    !level?.requireVideoCompletion ||
-    !hasVideoContent ||
-    currentWatchPercent >= requiredWatchPercent;
-  const isQuizLocked = Boolean(level?.requireVideoCompletion) && !isVideoPhaseComplete;
+  const completionRules = level?.completionRules;
+  const isContentPhaseComplete =
+    completionRules?.contentPassed ??
+    (!level?.requireVideoCompletion || !hasVideoContent || currentWatchPercent >= requiredWatchPercent);
+  const isQuizLocked = !isContentPhaseComplete;
   const isLevelCompleted = levelProgress?.status === 'COMPLETED';
 
   const latestAttemptResult = useMemo<LmsLevelAttemptResult | null>(() => {
@@ -86,10 +86,15 @@ export default function LmsLevelPage() {
     watchPercent?: number;
     watchSeconds?: number;
     videoPositionSeconds?: number;
+    contentType?: 'VIDEO' | 'READING';
   }) => {
     try {
       await videoProgressMutation.mutateAsync({ levelId, payload });
-      toast.success('Video progress updated');
+      if (payload.contentType === 'READING') {
+        toast.success('Reading progress updated');
+      } else {
+        toast.success('Video progress updated');
+      }
     } catch {
       // Error toast handled in API layer
     }
@@ -157,7 +162,7 @@ export default function LmsLevelPage() {
         </Link>
         <h1 className="text-2xl md:text-3xl font-bold">{level.title}</h1>
         <p className="text-muted-foreground">
-          Finish in order: video first, then quiz. Level completion is auto-processed once rules are met.
+          Finish required content first, then quiz. Level completion is auto-processed once rules are met.
         </p>
       </div>
 
@@ -189,6 +194,9 @@ export default function LmsLevelPage() {
             <Badge variant={level.requireVideoCompletion ? 'default' : 'secondary'}>
               Video: {level.requireVideoCompletion ? `Required (${requiredWatchPercent}%)` : 'Optional'}
             </Badge>
+            <Badge variant={level.requireReadingAcknowledgement ? 'default' : 'secondary'}>
+              Reading: {level.requireReadingAcknowledgement ? 'Required' : 'Optional'}
+            </Badge>
             <Badge variant={level.requireQuizPass ? 'default' : 'secondary'}>
               Quiz: {level.requireQuizPass ? `Required (${level.quizPassingPercent || 0}%)` : 'Optional'}
             </Badge>
@@ -208,11 +216,11 @@ export default function LmsLevelPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {level.requireVideoCompletion && hasVideoContent && (
+          {(level.requireVideoCompletion || level.requireReadingAcknowledgement) && (
             <div className="rounded-lg border p-3">
-              <p className="text-sm font-medium">Video Progress</p>
+              <p className="text-sm font-medium">Required Content Progress</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Required: {requiredWatchPercent}% | Current: {currentWatchPercent}%
+                Completed: {Math.round(completionRules?.reasons?.currentContentGatePercent ?? currentWatchPercent)}%
               </p>
             </div>
           )}
@@ -234,7 +242,7 @@ export default function LmsLevelPage() {
               Phase 2: Quiz
             </CardTitle>
             <CardDescription>
-              Quiz unlocks after completing required video watch progress.
+              Quiz unlocks only after all required content is completed.
             </CardDescription>
           </CardHeader>
           <CardContent>
