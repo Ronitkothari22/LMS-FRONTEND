@@ -48,8 +48,6 @@ export function LmsLevelQuizSection({
   );
 
   useEffect(() => {
-    if (!initialAnswers.length) return;
-
     const seededAnswers: QuizAnswerState = {};
     for (const answer of initialAnswers) {
       seededAnswers[answer.questionId] = {
@@ -57,6 +55,7 @@ export function LmsLevelQuizSection({
         textAnswer: answer.textAnswer || '',
       };
     }
+
     setAnswers(seededAnswers);
   }, [initialAnswers]);
 
@@ -141,6 +140,14 @@ export function LmsLevelQuizSection({
       <CardContent className="space-y-5">
         {sortedQuestions.map(question => {
           const current = answers[question.id];
+          const selectedOptionIds = current?.selectedOptionIds || [];
+          const selectedOptionTexts = (question.options || [])
+            .filter(option => selectedOptionIds.includes(option.id))
+            .map(option => option.optionText);
+          const correctOptionTexts = (question.options || [])
+            .filter(option => option.isCorrect)
+            .map(option => option.optionText);
+          const answerStatus = initialAnswers.find(answer => answer.questionId === question.id)?.isCorrect;
 
           return (
             <div key={question.id} className="rounded-xl border p-3">
@@ -168,6 +175,14 @@ export function LmsLevelQuizSection({
                 {question.type === 'SINGLE_CHOICE' &&
                   (question.options || []).map(option => {
                     const selected = current?.selectedOptionIds?.includes(option.id) || false;
+                    const isCorrectOption = !!option.isCorrect;
+                    const readOnlyClass = readOnly
+                      ? isCorrectOption
+                        ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                        : selected
+                          ? 'border-rose-500/50 bg-rose-500/10 text-rose-700 dark:text-rose-300'
+                          : 'border-border'
+                      : '';
 
                     return (
                       <button
@@ -179,9 +194,11 @@ export function LmsLevelQuizSection({
                         }}
                         disabled={readOnly}
                         className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
-                          selected
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border hover:border-primary/40'
+                          readOnly
+                            ? readOnlyClass
+                            : selected
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border hover:border-primary/40'
                         }`}
                       >
                         {option.optionText}
@@ -192,11 +209,21 @@ export function LmsLevelQuizSection({
                 {question.type === 'MULTIPLE_CORRECT' &&
                   (question.options || []).map(option => {
                     const checked = current?.selectedOptionIds?.includes(option.id) || false;
+                    const isCorrectOption = !!option.isCorrect;
+                    const readOnlyClass = readOnly
+                      ? isCorrectOption
+                        ? 'border-emerald-500/50 bg-emerald-500/10'
+                        : checked
+                          ? 'border-rose-500/50 bg-rose-500/10'
+                          : 'border-border'
+                      : 'hover:border-primary/40';
 
                     return (
                       <Label
                         key={option.id}
-                        className="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer hover:border-primary/40"
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${
+                          readOnly ? 'cursor-default' : 'cursor-pointer'
+                        } ${readOnlyClass}`}
                       >
                         <Checkbox
                           checked={checked}
@@ -212,16 +239,42 @@ export function LmsLevelQuizSection({
               </div>
 
               {readOnly && (
-                <div className="mt-3">
-                  {initialAnswers.find(answer => answer.questionId === question.id)?.isCorrect ? (
+                <div className="mt-3 space-y-2">
+                  {answerStatus === true ? (
                     <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-500/40" variant="outline">
                       Correct
                     </Badge>
-                  ) : (
+                  ) : answerStatus === false ? (
                     <Badge className="bg-rose-500/10 text-rose-700 border-rose-500/40" variant="outline">
                       Incorrect
                     </Badge>
+                  ) : (
+                    <Badge variant="outline">Not Evaluated</Badge>
                   )}
+
+                  <div className="rounded-lg border bg-muted/30 p-2 text-xs">
+                    <p className="font-medium">Your Answer</p>
+                    <p className="mt-1 text-muted-foreground">
+                      {question.type === 'TEXT'
+                        ? current?.textAnswer?.trim() || '--'
+                        : selectedOptionTexts.length
+                          ? selectedOptionTexts.join(', ')
+                          : '--'}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border bg-muted/30 p-2 text-xs">
+                    <p className="font-medium">Correct Answer</p>
+                    <p className="mt-1 text-muted-foreground">
+                      {question.type === 'TEXT'
+                        ? answerStatus
+                          ? current?.textAnswer?.trim() || '--'
+                          : 'Manual review based question'
+                        : correctOptionTexts.length
+                          ? correctOptionTexts.join(', ')
+                          : 'Not available'}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

@@ -1,24 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  useCompleteLmsLevel,
   useLmsLevel,
   useLmsProgress,
-  useSubmitLmsLevelAttempt,
   useUpdateLmsVideoProgress,
 } from '@/hooks/lms';
 import { LmsLevelContentSection } from '@/components/lms/level-content';
-import { LmsLevelQuizSection } from '@/components/lms/level-quiz';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { LmsLevelAttemptResult } from '@/types/lms';
 
 export default function LmsLevelPage() {
   const params = useParams<{ levelId: string }>();
@@ -27,10 +23,6 @@ export default function LmsLevelPage() {
   const { data: level, isLoading, isError } = useLmsLevel(levelId);
   const { data: lmsProgress } = useLmsProgress();
   const videoProgressMutation = useUpdateLmsVideoProgress();
-  const submitAttemptMutation = useSubmitLmsLevelAttempt();
-  const completeLevelMutation = useCompleteLmsLevel();
-
-  const [attemptResult, setAttemptResult] = useState<LmsLevelAttemptResult | null>(null);
 
   const contentStats = useMemo(() => {
     const items = level?.contents || [];
@@ -63,23 +55,6 @@ export default function LmsLevelPage() {
   const isQuizLocked = !isContentPhaseComplete;
   const isLevelCompleted = levelProgress?.status === 'COMPLETED';
 
-  const latestAttemptResult = useMemo<LmsLevelAttemptResult | null>(() => {
-    if (!level?.latestAttempt) return null;
-    return {
-      attempt: {
-        id: level.latestAttempt.id,
-        status: level.latestAttempt.status,
-        scorePercent: level.latestAttempt.scorePercent ?? undefined,
-        createdAt: level.latestAttempt.submittedAt || undefined,
-      },
-      summary: {
-        passed: level.latestAttempt.status === 'PASSED',
-        scorePercent: level.latestAttempt.scorePercent ?? 0,
-        passThreshold: level.quizPassingPercent || 0,
-      },
-    };
-  }, [level?.latestAttempt, level?.quizPassingPercent]);
-
   const handleVideoProgress = async (payload: {
     contentId: string;
     eventType: 'START' | 'PROGRESS' | 'PAUSE' | 'SEEK' | 'COMPLETE';
@@ -94,34 +69,6 @@ export default function LmsLevelPage() {
         toast.success('Reading progress updated');
       } else {
         toast.success('Video progress updated');
-      }
-    } catch {
-      // Error toast handled in API layer
-    }
-  };
-
-  const handleSubmitAttempt = async (payload: {
-    answers: {
-      questionId: string;
-      selectedOptionIds?: string[];
-      textAnswer?: string;
-    }[];
-    timeSpentSeconds?: number;
-  }) => {
-    try {
-      const response = await submitAttemptMutation.mutateAsync({ levelId, payload });
-      setAttemptResult(response);
-
-      if (response.summary.passed) {
-        toast.success('Great work! You passed this level quiz.');
-        try {
-          await completeLevelMutation.mutateAsync({ levelId, force: false });
-          toast.success('Level marked completed and next step unlocked.');
-        } catch {
-          // Error toast handled in API layer
-        }
-      } else {
-        toast.error('Attempt submitted. Pass threshold not met yet.');
       }
     } catch {
       // Error toast handled in API layer
@@ -234,29 +181,26 @@ export default function LmsLevelPage() {
         </CardContent>
       </Card>
 
-      {!isQuizLocked && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Badge className="h-6 w-6 flex items-center justify-center rounded-full px-0">2</Badge>
-              Phase 2: Quiz
-            </CardTitle>
-            <CardDescription>
-              Quiz unlocks only after all required content is completed.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <LmsLevelQuizSection
-              questions={level.questions || []}
-              isSubmitting={submitAttemptMutation.isPending}
-              result={attemptResult || latestAttemptResult}
-              readOnly={isLevelCompleted}
-              initialAnswers={isLevelCompleted ? level.latestAttempt?.answers || [] : []}
-              onSubmitAttempt={handleSubmitAttempt}
-            />
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Badge className="h-6 w-6 flex items-center justify-center rounded-full px-0">2</Badge>
+            Phase 2: Quiz
+          </CardTitle>
+          <CardDescription>Start quiz from the dedicated quiz page once unlocked.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isQuizLocked ? (
+            <div className="rounded-lg border p-3 text-sm text-muted-foreground">
+              Complete required video/reading content to unlock this quiz.
+            </div>
+          ) : (
+            <Link href={`/dashboard/lms/levels/${levelId}/quiz`}>
+              <Button className="w-full">{isLevelCompleted ? 'View Quiz Result' : 'Open Quiz Page'}</Button>
+            </Link>
+          )}
+        </CardContent>
+      </Card>
 
     </div>
   );
