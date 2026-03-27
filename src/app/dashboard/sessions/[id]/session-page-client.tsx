@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { StatCard } from '@/components/ui/stat-card';
 import {
   CalendarIcon,
@@ -28,17 +30,20 @@ import { useUser } from '@/hooks/auth';
 import { getCookie } from 'cookies-next';
 import { ContentList } from '@/components/content';
 import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 import { PollCard } from '@/components/polls/poll-card';
 import { JoinPollModal } from '@/components/polls/join-poll-modal';
 import { LeaderboardModal } from '@/components/quiz/leaderboard-modal';
 import { FeedbackList } from '@/components/feedback';
-import { TrophyIcon, HelpCircleIcon, CheckCircleIcon } from 'lucide-react';
+import { TrophyIcon, HelpCircleIcon, CheckCircleIcon, UploadIcon } from 'lucide-react';
 import { fetchQuiz } from '@/lib/api/quizzes';
 import { TeamsPageClient } from './teams/teams-page-client';
 import { useQuizAccess } from '@/hooks/quizzes';
 import { useSessionSurveys } from '@/hooks/surveys';
 import { SurveyCard } from '@/components/surveys/survey-card';
 import { useMySurveyResponses } from '@/hooks/surveys';
+import { useMySessionAssignments, useSubmitMySessionAssignment } from '@/hooks/session-assignments';
+import { toast } from 'sonner';
 
 interface SessionPageClientProps {
   id: string;
@@ -605,7 +610,7 @@ export default function SessionPageClient({ id }: SessionPageClientProps) {
 
       {/* Session Tabs */}
       <Tabs defaultValue="content" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-1 rounded-xl gap-1 h-auto">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-1 rounded-xl gap-1 h-auto">
           <TabsTrigger
             value="content"
             className="rounded-lg data-[state=active]:bg-white data-[state=active]:dark:bg-gray-900 data-[state=active]:text-[#14C8C8] data-[state=active]:shadow-md transition-all duration-300 text-xs sm:text-sm px-2 py-2 sm:px-3"
@@ -647,6 +652,12 @@ export default function SessionPageClient({ id }: SessionPageClientProps) {
             className="rounded-lg data-[state=active]:bg-white data-[state=active]:dark:bg-gray-900 data-[state=active]:text-[#14C8C8] data-[state=active]:shadow-md transition-all duration-300 text-xs sm:text-sm px-2 py-2 sm:px-3"
           >
             Feedback
+          </TabsTrigger>
+          <TabsTrigger
+            value="assignments"
+            className="rounded-lg data-[state=active]:bg-white data-[state=active]:dark:bg-gray-900 data-[state=active]:text-[#14C8C8] data-[state=active]:shadow-md transition-all duration-300 text-xs sm:text-sm px-2 py-2 sm:px-3"
+          >
+            Assignments
           </TabsTrigger>
         </TabsList>
 
@@ -861,6 +872,11 @@ export default function SessionPageClient({ id }: SessionPageClientProps) {
           </div>
           <FeedbackTabContent sessionId={id} />
         </TabsContent>
+
+        {/* Assignments Tab */}
+        <TabsContent value="assignments" className="space-y-6 mt-4">
+          <AssignmentsTabContent sessionId={id} />
+        </TabsContent>
       </Tabs>
 
       {/* Leaderboard Modal */}
@@ -880,6 +896,232 @@ function TeamsTabContent({ sessionId }: { sessionId: string }) {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold text-[#14C8C8]">Teams</h2>
       <TeamsPageClient sessionId={sessionId} />
+    </div>
+  );
+}
+
+function AssignmentsTabContent({ sessionId }: { sessionId: string }) {
+  const { data, isLoading, isError } = useMySessionAssignments(sessionId);
+  const submitAssignment = useSubmitMySessionAssignment(sessionId);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>('');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [replaceExisting, setReplaceExisting] = useState(false);
+
+  const assignments = data?.items || [];
+  const selectedAssignment =
+    assignments.find(a => a.id === selectedAssignmentId) || assignments[0] || null;
+
+  useEffect(() => {
+    if (selectedAssignment && selectedAssignment.id !== selectedAssignmentId) {
+      setSelectedAssignmentId(selectedAssignment.id);
+    }
+  }, [selectedAssignment, selectedAssignmentId]);
+
+  const acceptedExtensions = selectedAssignment?.allowedFileTypes?.length
+    ? selectedAssignment.allowedFileTypes.map(ext => `.${ext}`).join(',')
+    : '.pdf,.doc,.docx';
+
+  const onSubmit = async () => {
+    if (!selectedAssignment) return;
+    if (selectedFiles.length === 0) {
+      toast.error('Please select at least one file');
+      return;
+    }
+
+    try {
+      await submitAssignment.mutateAsync({
+        assignmentId: selectedAssignment.id,
+        files: selectedFiles,
+        replaceExisting: selectedAssignment.mySubmission ? replaceExisting : undefined,
+      });
+      setSelectedFiles([]);
+      setReplaceExisting(false);
+      toast.success('Assignment submitted successfully');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to submit assignment';
+      toast.error(message);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-[#14C8C8] border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading assignments...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card className="border-destructive/20 bg-destructive/5 dark:bg-destructive/10">
+        <CardHeader>
+          <CardTitle className="text-destructive dark:text-red-400">Error Loading Assignments</CardTitle>
+          <CardDescription className="text-destructive/80 dark:text-red-300/80">
+            Failed to load assignment data for this session.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (!assignments.length) {
+    return (
+      <Card className="border-dashed border-2 border-gray-200 bg-gray-50/30 dark:border-gray-700 dark:bg-gray-800/30">
+        <CardHeader className="text-center py-12">
+          <CardTitle className="text-gray-600 dark:text-gray-300 text-xl">
+            No Assignments Available
+          </CardTitle>
+          <CardDescription className="max-w-sm mx-auto text-gray-500 dark:text-gray-400 mt-2">
+            There are no assignments for this session yet.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4">
+        {assignments.map(assignment => (
+          <Card
+            key={assignment.id}
+            className={`cursor-pointer transition-all ${
+              selectedAssignment?.id === assignment.id ? 'border-[#14C8C8] shadow-md' : ''
+            }`}
+            onClick={() => setSelectedAssignmentId(assignment.id)}
+          >
+            <CardHeader>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="text-base">{assignment.title}</CardTitle>
+                  <CardDescription>
+                    Due: {format(new Date(assignment.dueDate), 'PPP p')}
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Badge variant="outline">{assignment.deadlineStatus}</Badge>
+                  {assignment.mySubmission ? (
+                    <Badge className="bg-green-600 text-white">Submitted</Badge>
+                  ) : (
+                    <Badge variant="secondary">Pending</Badge>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        ))}
+      </div>
+
+      {selectedAssignment && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{selectedAssignment.title}</CardTitle>
+            <CardDescription>
+              Upload your files before the deadline. Allowed types:{' '}
+              {selectedAssignment.allowedFileTypes.join(', ').toUpperCase()}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {selectedAssignment.instructions && (
+              <div className="rounded-md border p-3 text-sm whitespace-pre-wrap">
+                {selectedAssignment.instructions}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div className="rounded-md border p-3">
+                <p className="text-muted-foreground">Max File Size</p>
+                <p className="font-medium">{selectedAssignment.maxFileSizeMb} MB / file</p>
+              </div>
+              <div className="rounded-md border p-3">
+                <p className="text-muted-foreground">Max Files</p>
+                <p className="font-medium">{selectedAssignment.maxFilesPerSubmission}</p>
+              </div>
+              <div className="rounded-md border p-3">
+                <p className="text-muted-foreground">Late Submission</p>
+                <p className="font-medium">
+                  {selectedAssignment.allowLateSubmission ? 'Allowed' : 'Not Allowed'}
+                </p>
+              </div>
+            </div>
+
+            {selectedAssignment.mySubmission && (
+              <div className="space-y-2 rounded-md border p-3">
+                <p className="font-medium">Your Latest Submission</p>
+                <p className="text-sm text-muted-foreground">
+                  Submitted at {format(new Date(selectedAssignment.mySubmission.submittedAt), 'PPP p')}
+                  {' • '}
+                  {selectedAssignment.mySubmission.isLate ? 'Late' : 'On Time'}
+                  {' • '}Version {selectedAssignment.mySubmission.version}
+                </p>
+                <div className="space-y-1">
+                  {selectedAssignment.mySubmission.files.map(file => (
+                    <a
+                      key={file.id}
+                      href={file.fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block text-sm text-[#14C8C8] hover:underline"
+                    >
+                      {file.fileName}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="assignment-files">Upload Files</Label>
+              <Input
+                id="assignment-files"
+                type="file"
+                multiple
+                accept={acceptedExtensions}
+                onChange={e => setSelectedFiles(Array.from(e.target.files || []))}
+                disabled={!selectedAssignment.canSubmit}
+              />
+              {selectedFiles.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} selected
+                </p>
+              )}
+            </div>
+
+            {selectedAssignment.mySubmission && (
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={replaceExisting}
+                  onChange={e => setReplaceExisting(e.target.checked)}
+                />
+                Replace existing submission
+              </label>
+            )}
+
+            <Button
+              onClick={onSubmit}
+              disabled={
+                submitAssignment.isPending ||
+                !selectedAssignment.canSubmit ||
+                selectedFiles.length === 0
+              }
+              className="bg-[#14C8C8] hover:bg-[#0FB6B6] text-white"
+            >
+              <UploadIcon className="h-4 w-4 mr-2" />
+              {submitAssignment.isPending ? 'Submitting...' : 'Submit Assignment'}
+            </Button>
+
+            {!selectedAssignment.canSubmit && (
+              <p className="text-sm text-destructive">
+                Submission is closed for this assignment.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
